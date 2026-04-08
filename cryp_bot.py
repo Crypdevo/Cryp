@@ -323,17 +323,28 @@ def get_daily_briefing(is_pro=False):
             "include_24hr_change": "true"
         }
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
         data = response.json()
 
-        btc_price = data["bitcoin"]["usd"]
-        btc_change = data["bitcoin"]["usd_24h_change"]
+        print("Daily briefing raw data:", data)
 
-        eth_price = data["ethereum"]["usd"]
-        eth_change = data["ethereum"]["usd_24h_change"]
+        if not all(coin in data for coin in ["bitcoin", "ethereum", "solana"]):
+            print("Missing coin data in response")
+            return "⚠️ Failed to fetch daily briefing. Try again later."
 
-        sol_price = data["solana"]["usd"]
-        sol_change = data["solana"]["usd_24h_change"]
+        btc_price = data["bitcoin"].get("usd")
+        btc_change = data["bitcoin"].get("usd_24h_change")
+
+        eth_price = data["ethereum"].get("usd")
+        eth_change = data["ethereum"].get("usd_24h_change")
+
+        sol_price = data["solana"].get("usd")
+        sol_change = data["solana"].get("usd_24h_change")
+
+        if None in [btc_price, btc_change, eth_price, eth_change, sol_price, sol_change]:
+            print("Missing price/change values:", data)
+            return "⚠️ Failed to fetch daily briefing. Try again later."
 
         avg_change = (btc_change + eth_change + sol_change) / 3
 
@@ -370,7 +381,7 @@ def get_daily_briefing(is_pro=False):
 {pro_insight}
 """
 
-        return briefing
+        return briefing.strip()
 
     except Exception as e:
         print("Error fetching daily briefing:", e)
