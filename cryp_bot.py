@@ -1987,23 +1987,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         user_id = update.message.from_user.id
+        user = get_user(user_id)
+        is_pro = bool(user["is_pro"]) if user else False
+
         message_parts = update.message.text.strip().lower().split()
-        
         text = update.message.text.strip().lower()
 
         supported_coins = ["btc", "eth", "sol", "xrp", "doge", "ada", "bnb"]
 
         if text in supported_coins:
-            is_pro = user_id in pro_users
             analysis = get_coin_analysis(text, is_pro=is_pro)
             await update.message.reply_text(analysis, parse_mode="Markdown")
             return
-        
+
         if text == "insight":
             insight = get_premium_insight()
             await update.message.reply_text(insight, parse_mode="Markdown")
             return
-        
+
         if text == "watchlist":
             watchlist_text = get_watchlist_with_prices(user_id)
 
@@ -2015,24 +2016,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(watchlist_text, parse_mode="Markdown")
 
             return
-        
+
         if text == "news":
-            news = get_crypto_news()
+            news = get_crypto_news(user_id)
             await update.message.reply_text(news, parse_mode="Markdown")
             return
-        
+
         if "alert_coin" in context.user_data and "alert_condition" in context.user_data:
             try:
                 coin = context.user_data["alert_coin"]
                 condition = context.user_data["alert_condition"]
                 target_price = float(text)
 
-                if user_id not in pro_users and condition == "below":
+                if not is_pro and condition == "below":
                     await update.message.reply_text("💎 Below alerts are for Cryp Pro users only.")
                     context.user_data.clear()
                     return
 
-                if user_id not in pro_users:
+                if not is_pro:
                     user_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
                     if len(user_alerts) >= 2:
                         await update.message.reply_text(
@@ -2060,7 +2061,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except ValueError:
                 await update.message.reply_text("❌ Please enter a valid number.\n\nExample: 70000")
                 return
-        
+
         if len(message_parts) == 2 and message_parts[0] == "add":
             coin = message_parts[1].lower()
 
@@ -2073,7 +2074,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             add_to_watchlist(user_id, coin)
             await update.message.reply_text(f"✅ {coin.upper()} added to your watchlist.")
             return
-        
+
         if len(message_parts) == 2 and message_parts[0] == "remove":
             coin = message_parts[1].lower()
 
@@ -2085,13 +2086,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         if len(message_parts) == 2:
-            # Simple alert: BTC 70000
             coin = message_parts[0].upper()
             condition = "above"
             target_price = float(message_parts[1])
 
         elif len(message_parts) == 3:
-            # Advanced alert: BTC above 70000 / BTC below 65000
             coin = message_parts[0].upper()
             condition = message_parts[1].lower()
             target_price = float(message_parts[2])
@@ -2103,7 +2102,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            if user_id not in pro_users:
+            if not is_pro:
                 await update.message.reply_text(
                     "🔒 Above/below alerts are a *Cryp Pro* feature.",
                     parse_mode="Markdown"
@@ -2117,26 +2116,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # Find all alerts that already belong to this user
         user_alerts = [alert for alert in PRICE_ALERTS if alert["user_id"] == user_id]
 
-        # Check if this user is a pro user
-        is_pro = user_id in pro_users
-
-        # If free user already has 2 alerts, block them
         if not is_pro and len(user_alerts) >= 2:
             await update.message.reply_text(
                 "❌ Free users can only have 2 alerts.\nUpgrade to Pro for unlimited alerts."
             )
             return
 
-        # Save the alert
         PRICE_ALERTS.append({
             "user_id": user_id,
             "coin": coin,
             "target": target_price,
             "condition": condition,
-            "premium": user_id in pro_users
+            "premium": is_pro
         })
 
         save_price_alerts()
@@ -2150,7 +2143,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
 
-        if user_id not in pro_users:
+        if not is_pro:
             await update.message.reply_text(
                 "🚀 Want unlimited alerts? Upgrade to *Cryp Pro* anytime.",
                 reply_markup=InlineKeyboardMarkup([
@@ -2163,7 +2156,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ Invalid format. Use like this:\nBTC 70000"
         )
-    import asyncio
 
 async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
     print("=== CHECKING ALERTS ===")
