@@ -2268,7 +2268,7 @@ def main():
     app.job_queue.run_repeating(send_top_movers, interval=14400, first=20)
     app.job_queue.run_repeating(send_breaking_alert, interval=900, first=25)
     app.job_queue.run_repeating(send_premium_insight, interval=14400, first=30)
-    app.job_queue.run_repeating(send_daily_briefing, interval=86400, first=60)
+    app.job_queue.run_repeating(send_daily_briefing, interval=86400, first=86400)
 
     print("Cryp bot is running...")
     app.run_polling()
