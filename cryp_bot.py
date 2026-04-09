@@ -718,6 +718,9 @@ def get_eth_news(user_id):
     
 def get_altcoin_news(user_id):
     try:
+        user = get_user(user_id)
+        is_pro = bool(user["is_pro"]) if user else False
+
         url = "https://cointelegraph.com/rss"
         response = requests.get(url, timeout=5)
         feed = feedparser.parse(response.content)
@@ -731,18 +734,42 @@ def get_altcoin_news(user_id):
         headlines = []
 
         for entry in feed.entries:
-            title_lower = entry.title.lower()
+            title = entry.title
+            summary = getattr(entry, "summary", "")
+
+            title_lower = title.lower()
+            combined_text = f" {title_lower} {summary.lower()} "
             padded_title = f" {title_lower} "
 
-            is_btc = "bitcoin" in title_lower or " btc " in padded_title
+            is_btc = (
+                "bitcoin" in combined_text
+                or " btc " in combined_text
+                or "satoshi" in combined_text
+                or "lightning network" in combined_text
+                or "bitcoin etf" in combined_text
+                or "microstrategy" in combined_text
+                or "michael saylor" in combined_text
+            )
+
             is_eth = (
-                "ethereum" in title_lower
-                or " ether " in padded_title
-                or " eth " in padded_title
+                "ethereum" in combined_text
+                or " ether " in combined_text
+                or " eth " in combined_text
+                or "vitalik" in combined_text
+                or "staking" in combined_text
+                or "erc-20" in combined_text
+                or "layer 2" in combined_text
+                or "rollup" in combined_text
+                or "arbitrum" in combined_text
+                or "optimism" in combined_text
+                or "base" in combined_text
+                or "lido" in combined_text
+                or "eigenlayer" in combined_text
+                or "pectra" in combined_text
             )
 
             if not is_btc and not is_eth:
-                headlines.append(entry.title)
+                headlines.append(title)
 
             if len(headlines) == 3:
                 break
@@ -751,37 +778,37 @@ def get_altcoin_news(user_id):
             return "⚠️ No altcoin news found right now."
 
         summaries = []
-        if user_id in pro_users:
+        if is_pro:
             summaries = get_ai_summary_block(headlines)
 
         sentiment = "🟡 Neutral"
-        if user_id in pro_users:
+        if is_pro:
             sentiment = get_market_sentiment(headlines)
 
         top_story = headlines[0]
-        top_summary = summaries[0] if user_id in pro_users and len(summaries) > 0 else ""
+        top_summary = summaries[0] if is_pro and len(summaries) > 0 else ""
 
-        if user_id in pro_users:
+        if is_pro:
             news_text += f"🔥 *Top Story*\n{top_story}\n\n"
             if top_summary:
                 news_text += format_signal_line(top_summary) + "\n\n"
             news_text += "━━━━━━━━━━━━━━\n\n"
 
-        start_index = 1 if user_id in pro_users else 0
+        start_index = 1 if is_pro else 0
 
         for i, title in enumerate(headlines[start_index:], start=1):
             news_text += f"*{i}.* {title}\n"
 
-            summary_index = i if user_id in pro_users else i - 1
+            summary_index = i if is_pro else i - 1
 
-            if user_id in pro_users and summary_index < len(summaries):
+            if is_pro and summary_index < len(summaries):
                 news_text += format_signal_line(summaries[summary_index]) + "\n"
 
             news_text += "\n"
 
         news_text += "━━━━━━━━━━━━━━\n"
 
-        if user_id in pro_users:
+        if is_pro:
             news_text += f"📊 *Market Sentiment:* {sentiment}\n\n"
             news_text += "💎 *Cryp Pro Active*\n"
             news_text += "📡 Premium insights enabled"
