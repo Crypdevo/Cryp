@@ -1,6 +1,8 @@
+import os
 import sqlite3
 
-DB_PATH = "cryp.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "cryp.db")
 
 
 def get_conn():
