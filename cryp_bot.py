@@ -6,6 +6,7 @@ from openai import OpenAI
 import time
 from dotenv import load_dotenv
 from db import init_db
+from db import get_user
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -220,7 +221,10 @@ def get_coin_data(symbol):
     return price, change            
 
 def main_menu_keyboard(user_id):
-    if user_id in pro_users:
+    user = get_user(user_id)
+    is_pro = bool(user["is_pro"]) if user else False
+
+    if is_pro:
         keyboard = [
             [InlineKeyboardButton("📊 Market Snapshot", callback_data="market_snapshot")],
             [InlineKeyboardButton("📰 Daily Briefing", callback_data="daily_briefing")],
