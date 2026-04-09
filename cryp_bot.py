@@ -7,6 +7,7 @@ import time
 from dotenv import load_dotenv
 from db import init_db
 from db import get_user
+from migrate_pro_users import migrate
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -2249,6 +2250,7 @@ def init_db():
 
 def main():
     init_db()
+    migrate()
     load_pro_users()
     load_price_alerts()
     load_watchlists()
