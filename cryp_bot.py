@@ -871,7 +871,7 @@ def format_signal_line(text):
     else:
         return f"📊 *Market Impact:* {cleaned}" 
     
-def get_daily_briefing():
+def get_ai_daily_briefing():
     try:
         url = "https://cointelegraph.com/rss"
         feed = feedparser.parse(url)
@@ -1383,7 +1383,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        briefing = get_daily_briefing()
+        briefing = get_ai_daily_briefing()
 
         await query.edit_message_text(
             text=briefing,
