@@ -453,7 +453,8 @@ import feedparser
 def get_crypto_news(user_id):
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No market news available right now."
@@ -520,7 +521,8 @@ def get_crypto_news(user_id):
 def get_btc_news(user_id):
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No BTC news available right now."
@@ -593,7 +595,8 @@ def get_btc_news(user_id):
 def get_eth_news(user_id):
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No ETH news available right now."
@@ -667,7 +670,8 @@ def get_eth_news(user_id):
 def get_altcoin_news(user_id):
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No altcoin news available right now."
@@ -786,7 +790,8 @@ Rules:
 def get_ai_market_summary():
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No news available for AI summary right now."
@@ -874,7 +879,8 @@ def format_signal_line(text):
 def get_ai_daily_briefing():
     try:
         url = "https://cointelegraph.com/rss"
-        feed = feedparser.parse(url)
+        response = requests.get(url, timeout=5)
+        feed = feedparser.parse(response.content)
 
         if not feed.entries:
             return "⚠️ No data available for briefing."
