@@ -5,6 +5,7 @@ import sqlite3
 from openai import OpenAI
 import time
 from dotenv import load_dotenv
+from db import init_db
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
