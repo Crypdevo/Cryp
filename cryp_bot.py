@@ -1,6 +1,7 @@
 import logging
 import requests
 import os
+import sqlite3
 from openai import OpenAI
 import time
 from dotenv import load_dotenv
@@ -15,7 +16,8 @@ CRYP_PRO_CHANNEL_ID = -1003800067003
 PAYMENT_LINK = "https://t.me/Crypdaman"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PRO_USERS_FILE = os.path.join(BASE_DIR, "pro_users.txt")
-ALERTS_FILE = os.path.join(BASE_DIR, "alerts.txt")
+ALERTS_FILE = os.path.join(BASE_DIR, "alerts.txt
+DB_FILE = "cryp_data.db"
 WATCHLIST_FILE = os.path.join(BASE_DIR, "watchlists.txt")
 WATCHLISTS = {}
 LAST_BREAKING_ALERTS = {}
@@ -163,33 +165,49 @@ def load_price_alerts():
     global PRICE_ALERTS
     PRICE_ALERTS = []
 
-    try:
-        with open(ALERTS_FILE, "r") as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-                parts = line.split(",")
+    cursor.execute("""
+        SELECT user_id, coin, condition, target, premium
+        FROM alerts
+    """)
 
-                if len(parts) == 3:
-                    user_id = int(parts[0])
-                    coin = parts[1]
-                    target = float(parts[2])
+    rows = cursor.fetchall()
+    conn.close()
 
-                    PRICE_ALERTS.append({
-                        "user_id": user_id,
-                        "coin": coin,
-                        "target": target
-                    })
-    except FileNotFoundError:
-        PRICE_ALERTS = []
+    for row in rows:
+        user_id, coin, condition, target, premium = row
+
+        PRICE_ALERTS.append({
+            "user_id": user_id,
+            "coin": coin,
+            "condition": condition,
+            "target": float(target),
+            "premium": bool(premium)
+        })
 
 
 def save_price_alerts():
-    with open(ALERTS_FILE, "w") as file:
-        for alert in PRICE_ALERTS:
-            file.write(f"{alert['user_id']},{alert['coin']},{alert['target']}\n")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM alerts")
+
+    for alert in PRICE_ALERTS:
+        cursor.execute("""
+            INSERT INTO alerts (user_id, coin, condition, target, premium)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            alert["user_id"],
+            alert["coin"],
+            alert.get("condition", "above"),
+            float(alert["target"]),
+            1 if alert.get("premium", False) else 0
+        ))
+
+    conn.commit()
+    conn.close()
             
 def get_coin_data(symbol):
     url = f"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}"
@@ -2185,7 +2203,30 @@ async def delete_alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"✅ Deleted alert: {alert_to_delete['coin']} at ${alert_to_delete['target']}"
     )
 
+def get_db_connection():
+    return sqlite3.connect(DB_FILE)
+
+
+def init_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            coin TEXT NOT NULL,
+            condition TEXT NOT NULL,
+            target REAL NOT NULL,
+            premium INTEGER NOT NULL DEFAULT 0
+        )
+    """)
+
+    conn.commit()
+    conn.close()    
+
 def main():
+    init_db()
     load_pro_users()
     load_price_alerts()
     load_watchlists()
