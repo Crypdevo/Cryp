@@ -529,6 +529,9 @@ def get_crypto_news(user_id):
     
 def get_btc_news(user_id):
     try:
+        user = get_user(user_id)
+        is_pro = bool(user["is_pro"]) if user else False
+
         url = "https://cointelegraph.com/rss"
         response = requests.get(url, timeout=5)
         feed = feedparser.parse(response.content)
@@ -541,14 +544,29 @@ def get_btc_news(user_id):
 
         headlines = []
 
-        for entry in feed.entries:
-            title_lower = entry.title.lower()
+        btc_keywords = [
+            "bitcoin",
+            " btc ",
+            "satoshi",
+            "ordinals",
+            "lightning network",
+            "spot bitcoin etf",
+            "bitcoin etf",
+            "microstrategy",
+            "michael saylor",
+            "halving",
+            "miners",
+            "mining difficulty"
+        ]
 
-            if (
-                "bitcoin" in title_lower
-                or " btc " in f" {title_lower} "
-            ):
-                headlines.append(entry.title)
+        for entry in feed.entries:
+            title = entry.title
+            summary = getattr(entry, "summary", "")
+
+            combined_text = f" {title.lower()} {summary.lower()} "
+
+            if any(keyword in combined_text for keyword in btc_keywords):
+                headlines.append(title)
 
             if len(headlines) == 3:
                 break
@@ -557,37 +575,37 @@ def get_btc_news(user_id):
             return "⚠️ No BTC news found right now."
 
         summaries = []
-        if user_id in pro_users:
+        if is_pro:
             summaries = get_ai_summary_block(headlines)
 
         sentiment = "🟡 Neutral"
-        if user_id in pro_users:
+        if is_pro:
             sentiment = get_market_sentiment(headlines)
 
         top_story = headlines[0]
-        top_summary = summaries[0] if user_id in pro_users and len(summaries) > 0 else ""
+        top_summary = summaries[0] if is_pro and len(summaries) > 0 else ""
 
-        if user_id in pro_users:
+        if is_pro:
             news_text += f"🔥 *Top Story*\n{top_story}\n\n"
             if top_summary:
                 news_text += format_signal_line(top_summary) + "\n\n"
             news_text += "━━━━━━━━━━━━━━\n\n"
 
-        start_index = 1 if user_id in pro_users else 0
+        start_index = 1 if is_pro else 0
 
         for i, title in enumerate(headlines[start_index:], start=1):
             news_text += f"*{i}.* {title}\n"
 
-            summary_index = i if user_id in pro_users else i - 1
+            summary_index = i if is_pro else i - 1
 
-            if user_id in pro_users and summary_index < len(summaries):
+            if is_pro and summary_index < len(summaries):
                 news_text += format_signal_line(summaries[summary_index]) + "\n"
 
             news_text += "\n"
 
         news_text += "━━━━━━━━━━━━━━\n"
 
-        if user_id in pro_users:
+        if is_pro:
             news_text += f"📊 *Market Sentiment:* {sentiment}\n\n"
             news_text += "💎 *Cryp Pro Active*\n"
             news_text += "📡 Premium insights enabled"
