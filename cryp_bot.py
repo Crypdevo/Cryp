@@ -618,15 +618,34 @@ def get_eth_news(user_id):
 
         headlines = []
 
-        for entry in feed.entries:
-            title_lower = entry.title.lower()
+        eth_keywords = [
+            "ethereum",
+            " ether ",
+            " eth ",
+            "vitalik",
+            "staking",
+            "staked ether",
+            "gas fees",
+            "erc-20",
+            "layer 2",
+            "rollup",
+            "rollups",
+            "arbitrum",
+            "optimism",
+            "base",
+            "lido",
+            "eigenlayer",
+            "pectra"
+        ]
 
-            if (
-                "ethereum" in title_lower
-                or " ether " in f" {title_lower} "
-                or " eth " in f" {title_lower} "
-            ):
-                headlines.append(entry.title)
+        for entry in feed.entries:
+            title = entry.title
+            summary = getattr(entry, "summary", "")
+
+            combined_text = f" {title.lower()} {summary.lower()} "
+
+            if any(keyword in combined_text for keyword in eth_keywords):
+                headlines.append(title)
 
             if len(headlines) == 3:
                 break
