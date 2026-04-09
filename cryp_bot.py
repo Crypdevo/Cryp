@@ -1450,259 +1450,189 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         print(f"BUTTON DEBUG -> user_id={user_id}, username={username}, db_is_pro={is_pro}")
 
-    if query.data == "free_alerts":
-        text = (
-            "Free Alerts ✅\n\n"
-            "Cryp Free currently covers:\n"
-            "• BTC\n"
-            "• ETH\n"
-            "• SOL\n\n"
-            "You’ll receive basic market alerts and daily updates here.\n\n"
-            "Want faster alerts and more coins? Tap Upgrade to Pro."
-        )
-        await query.edit_message_text(
-            text=text,
-            reply_markup=main_menu_keyboard(query.from_user.id)
-        )
-        
-    elif query.data == "market_snapshot":
-        snapshot = get_market_snapshot()
-        await query.message.reply_text(snapshot, parse_mode="Markdown")
-        
-    elif query.data == "daily_briefing":
-        user_id = query.from_user.id
-
-        if user_id not in pro_users:
+        if query.data == "free_alerts":
+            text = (
+                "Free Alerts ✅\n\n"
+                "Cryp Free currently covers:\n"
+                "• BTC\n"
+                "• ETH\n"
+                "• SOL\n\n"
+                "You’ll receive basic market alerts and daily updates here.\n\n"
+                "Want faster alerts and more coins? Tap Upgrade to Pro."
+            )
             await query.edit_message_text(
-                "🔒 Daily Briefing is a *Cryp Pro* feature.",
+                text=text,
+                reply_markup=main_menu_keyboard(user_id)
+            )
+
+        elif query.data == "market_snapshot":
+            snapshot = get_market_snapshot()
+            await query.message.reply_text(snapshot, parse_mode="Markdown")
+
+        elif query.data == "daily_briefing":
+            if not is_pro:
+                await query.edit_message_text(
+                    "🔒 Daily Briefing is a *Cryp Pro* feature.",
+                    parse_mode="Markdown",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("💎 Upgrade to Pro", callback_data="upgrade_pro")],
+                        [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                    ])
+                )
+                return
+
+            briefing = get_ai_daily_briefing()
+
+            await query.edit_message_text(
+                text=briefing,
                 parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("💎 Upgrade to Pro", callback_data="upgrade_pro")],
                     [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
                 ])
             )
-            return
 
-        briefing = get_ai_daily_briefing()
+        elif query.data == "news_menu":
+            if is_pro:
+                keyboard = [
+                    [InlineKeyboardButton("₿ BTC News", callback_data="btc_news")],
+                    [InlineKeyboardButton("Ξ ETH News", callback_data="eth_news")],
+                    [InlineKeyboardButton("🌍 Market News", callback_data="market_news")],
+                    [InlineKeyboardButton("🚀 Altcoin News", callback_data="altcoin_news")],
+                    [InlineKeyboardButton("🧠 AI Summary", callback_data="ai_summary")],
+                    [InlineKeyboardButton("⬅️ Back to Menu", callback_data="back_to_menu")]
+                ]
+                title = "🗞️ *NEWS HUB PRO*\n\nChoose an option:"
+            else:
+                keyboard = [
+                    [InlineKeyboardButton("₿ BTC News", callback_data="btc_news")],
+                    [InlineKeyboardButton("Ξ ETH News", callback_data="eth_news")],
+                    [InlineKeyboardButton("🌍 Market News", callback_data="market_news")],
+                    [InlineKeyboardButton("🔒 Altcoin News (Pro)", callback_data="pro_feature")],
+                    [InlineKeyboardButton("🔒 AI Summary (Pro)", callback_data="pro_feature")],
+                    [InlineKeyboardButton("⬅️ Back to Menu", callback_data="back_to_menu")]
+                ]
+                title = "🗞️ *NEWS HUB*\n\nChoose an option:"
 
-        await query.edit_message_text(
-            text=briefing,
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ])
-        )
-        
-    elif query.data == "news_menu":
-        user_id = query.from_user.id
-
-        if user_id in pro_users:
-            keyboard = [
-                [InlineKeyboardButton("₿ BTC News", callback_data="btc_news")],
-                [InlineKeyboardButton("Ξ ETH News", callback_data="eth_news")],
-                [InlineKeyboardButton("🌍 Market News", callback_data="market_news")],
-                [InlineKeyboardButton("🚀 Altcoin News", callback_data="altcoin_news")],
-                [InlineKeyboardButton("🧠 AI Summary", callback_data="ai_summary")],
-                [InlineKeyboardButton("⬅️ Back to Menu", callback_data="back_to_menu")]
-            ]
-
-            title = "🗞️ *NEWS HUB PRO*\n\nChoose an option:"
-
-        else:
-            keyboard = [
-                [InlineKeyboardButton("₿ BTC News", callback_data="btc_news")],
-                [InlineKeyboardButton("Ξ ETH News", callback_data="eth_news")],
-                [InlineKeyboardButton("🌍 Market News", callback_data="market_news")],
-                [InlineKeyboardButton("🔒 Altcoin News (Pro)", callback_data="pro_feature")],
-                [InlineKeyboardButton("🔒 AI Summary (Pro)", callback_data="pro_feature")],
-                [InlineKeyboardButton("⬅️ Back to Menu", callback_data="back_to_menu")]
-            ]
-
-            title = "🗞️ *NEWS HUB*\n\nChoose an option:"
-
-        await query.edit_message_text(
-            title,
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
-        )
-        
-    elif query.data == "btc_news":
-        user_id = query.from_user.id
-        news = get_btc_news(user_id)
-
-        await query.edit_message_text(
-            text=news,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "eth_news":
-        user_id = query.from_user.id
-        news = get_eth_news(user_id)
-
-        await query.edit_message_text(
-            text=news,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "market_news":
-        user_id = query.from_user.id
-        news = get_crypto_news(user_id)
-
-        await query.edit_message_text(
-            text=news,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "altcoin_news":
-        user_id = query.from_user.id
-        news = get_altcoin_news(user_id)
-
-        await query.edit_message_text(
-            text=news,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "ai_summary":
-        summary = get_ai_market_summary()
-
-        await query.edit_message_text(
-            text=summary,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "pro_feature":
-        await query.answer("🔒 This is a Cryp Pro feature.", show_alert=True)      
-        
-    elif query.data == "latest_news":
-        user_id = query.from_user.id
-        news = get_crypto_news(user_id)
-
-        await query.edit_message_text(
-            text=news,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
-            ]),
-            parse_mode="Markdown"
-        )      
-        
-    elif query.data == "help":
-        text = (
-            "📘 *How to Use Cryp*\n\n"
-
-            "📊 Market Snapshot\n"
-            "→ Tap to see current prices & trend\n\n"
-
-            "📈 Market Update\n"
-            "→ Quick market overview\n\n"
-
-            "🚨 Create Alert\n"
-            "→ Follow the guided steps\n\n"
-
-            "👁 View Alerts\n"
-            "→ See your active alerts\n\n"
-
-            "⭐ Watchlist\n"
-            "→ Add: `add btc`\n"
-            "→ Remove: `remove btc`\n"
-            "→ View: `watchlist`\n\n"
-
-            "🧠 Coin Analysis\n"
-            "→ Just type:\n"
-            "`btc`, `eth`, `sol`\n\n"
-
-            "💎 Pro Features\n"
-            "→ Unlock advanced tools & insights\n"
-        )
-
-        await query.edit_message_text(
-            text,
-            parse_mode="Markdown",
-            reply_markup=back_menu_keyboard()
-        )            
-        
-    elif query.data == "support":
-        text = (
-    "💬 *Cryp Support*\n\n"
-    
-    "Need help with alerts, payments, or Pro access?\n\n"
-
-    "Our support team is here to help you 👇\n\n"
-
-    "📩 Contact: @crypdaman\n\n"
-
-    "We usually respond quickly 🚀"
-)   
-
-        await query.edit_message_text(
-    text=text,
-    reply_markup=back_menu_keyboard(),
-    parse_mode="Markdown"
-)    
-        
-    elif query.data == "view_alerts":
-        user_id = query.from_user.id
-        user_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
-
-        if not user_alerts:
             await query.edit_message_text(
-                text="You have no alerts set.",
+                title,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "btc_news":
+            news = get_btc_news(user_id)
+            await query.edit_message_text(
+                text=news,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "eth_news":
+            news = get_eth_news(user_id)
+            await query.edit_message_text(
+                text=news,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "market_news":
+            news = get_crypto_news(user_id)
+            await query.edit_message_text(
+                text=news,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "altcoin_news":
+            news = get_altcoin_news(user_id)
+            await query.edit_message_text(
+                text=news,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "ai_summary":
+            if not is_pro:
+                await query.answer("🔒 This is a Cryp Pro feature.", show_alert=True)
+                return
+
+            summary = get_ai_market_summary()
+            await query.edit_message_text(
+                text=summary,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "pro_feature":
+            await query.answer("🔒 This is a Cryp Pro feature.", show_alert=True)
+
+        elif query.data == "latest_news":
+            news = get_crypto_news(user_id)
+            await query.edit_message_text(
+                text=news,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to News", callback_data="news_menu")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+        elif query.data == "help":
+            text = (
+                "📘 *How to Use Cryp*\n\n"
+                "📊 Market Snapshot\n"
+                "→ Tap to see current prices & trend\n\n"
+                "📈 Market Update\n"
+                "→ Quick market overview\n\n"
+                "🚨 Create Alert\n"
+                "→ Follow the guided steps\n\n"
+                "👁 View Alerts\n"
+                "→ See your active alerts\n\n"
+                "⭐ Watchlist\n"
+                "→ Add: `add btc`\n"
+                "→ Remove: `remove btc`\n"
+                "→ View: `watchlist`\n\n"
+                "🧠 Coin Analysis\n"
+                "→ Just type:\n"
+                "`btc`, `eth`, `sol`\n\n"
+                "💎 Pro Features\n"
+                "→ Unlock advanced tools & insights\n"
+            )
+
+            await query.edit_message_text(
+                text,
+                parse_mode="Markdown",
                 reply_markup=back_menu_keyboard()
             )
-        else:
-            keyboard = []
 
-            text = "📈 Your Alerts:\n\n"
-
-            for i, a in enumerate(user_alerts):
-                condition = a.get("condition", "above").upper()
-                text += f"{i + 1}. {a['coin']} {condition} ${a['target']}\n"
-                keyboard.append([
-                    InlineKeyboardButton(
-                        f"❌ Delete {a['coin']} ${a['target']}",
-                        callback_data=f"delete_alert_{i}"
-                    )
-                ])
-
-            keyboard.append([
-                InlineKeyboardButton("🔙 Back to Menu", callback_data="back_to_menu")
-            ])
+        elif query.data == "support":
+            text = (
+                "💬 *Cryp Support*\n\n"
+                "Need help with alerts, payments, or Pro access?\n\n"
+                "Our support team is here to help you 👇\n\n"
+                "📩 Contact: @crypdaman\n\n"
+                "We usually respond quickly 🚀"
+            )
 
             await query.edit_message_text(
                 text=text,
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            ) 
-            
-    elif query.data.startswith("delete_alert_"):
-        user_id = query.from_user.id
-        user_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
+                reply_markup=back_menu_keyboard(),
+                parse_mode="Markdown"
+            )
 
-        index = int(query.data.split("_")[-1])
+        elif query.data == "view_alerts":
+            user_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
 
-        if 0 <= index < len(user_alerts):
-            alert_to_delete = user_alerts[index]
-            PRICE_ALERTS.remove(alert_to_delete)
-            save_price_alerts()
-
-            await query.answer("Alert deleted.")
-
-            remaining_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
-
-            if not remaining_alerts:
+            if not user_alerts:
                 await query.edit_message_text(
                     text="You have no alerts set.",
                     reply_markup=back_menu_keyboard()
@@ -1711,8 +1641,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 keyboard = []
                 text = "📈 Your Alerts:\n\n"
 
-                for i, a in enumerate(remaining_alerts):
-                    text += f"{i + 1}. {a['coin']} → ${a['target']}\n"
+                for i, a in enumerate(user_alerts):
+                    condition = a.get("condition", "above").upper()
+                    text += f"{i + 1}. {a['coin']} {condition} ${a['target']}\n"
                     keyboard.append([
                         InlineKeyboardButton(
                             f"❌ Delete {a['coin']} ${a['target']}",
@@ -1728,249 +1659,288 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     text=text,
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-        else:
-            await query.answer("Alert not found.", show_alert=True)         
 
-    elif query.data == "set_alert":
-        keyboard = [
-            [
-                InlineKeyboardButton("BTC", callback_data="alert_coin_btc"),
-                InlineKeyboardButton("ETH", callback_data="alert_coin_eth")
-            ],
-            [
-                InlineKeyboardButton("SOL", callback_data="alert_coin_sol"),
-                InlineKeyboardButton("XRP", callback_data="alert_coin_xrp")
-            ],
-            [
-                InlineKeyboardButton("DOGE", callback_data="alert_coin_doge"),
-                InlineKeyboardButton("ADA", callback_data="alert_coin_ada")
-            ],
-            [
-                InlineKeyboardButton("BNB", callback_data="alert_coin_bnb")
-            ],
-            [
-                InlineKeyboardButton("⬅ Back to Menu", callback_data="back_to_menu")
-            ]
-        ]
+        elif query.data.startswith("delete_alert_"):
+            user_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
+            index = int(query.data.split("_")[-1])
 
-        await query.edit_message_text(
-            "🪙 Choose a coin for your alert:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-        
-    elif query.data.startswith("alert_coin_"):
-        coin = query.data.split("_")[-1]
-        user_id = query.from_user.id
+            if 0 <= index < len(user_alerts):
+                alert_to_delete = user_alerts[index]
+                PRICE_ALERTS.remove(alert_to_delete)
+                save_price_alerts()
 
-        if user_id in pro_users:
+                await query.answer("Alert deleted.")
+
+                remaining_alerts = [a for a in PRICE_ALERTS if a["user_id"] == user_id]
+
+                if not remaining_alerts:
+                    await query.edit_message_text(
+                        text="You have no alerts set.",
+                        reply_markup=back_menu_keyboard()
+                    )
+                else:
+                    keyboard = []
+                    text = "📈 Your Alerts:\n\n"
+
+                    for i, a in enumerate(remaining_alerts):
+                        text += f"{i + 1}. {a['coin']} → ${a['target']}\n"
+                        keyboard.append([
+                            InlineKeyboardButton(
+                                f"❌ Delete {a['coin']} ${a['target']}",
+                                callback_data=f"delete_alert_{i}"
+                            )
+                        ])
+
+                    keyboard.append([
+                        InlineKeyboardButton("🔙 Back to Menu", callback_data="back_to_menu")
+                    ])
+
+                    await query.edit_message_text(
+                        text=text,
+                        reply_markup=InlineKeyboardMarkup(keyboard)
+                    )
+            else:
+                await query.answer("Alert not found.", show_alert=True)
+
+        elif query.data == "set_alert":
             keyboard = [
-                [InlineKeyboardButton("📈 Above", callback_data=f"alert_cond_{coin}_above")],
-                [InlineKeyboardButton("📉 Below", callback_data=f"alert_cond_{coin}_below")],
-                [InlineKeyboardButton("⬅ Back", callback_data="set_alert")]
+                [
+                    InlineKeyboardButton("BTC", callback_data="alert_coin_btc"),
+                    InlineKeyboardButton("ETH", callback_data="alert_coin_eth")
+                ],
+                [
+                    InlineKeyboardButton("SOL", callback_data="alert_coin_sol"),
+                    InlineKeyboardButton("XRP", callback_data="alert_coin_xrp")
+                ],
+                [
+                    InlineKeyboardButton("DOGE", callback_data="alert_coin_doge"),
+                    InlineKeyboardButton("ADA", callback_data="alert_coin_ada")
+                ],
+                [
+                    InlineKeyboardButton("BNB", callback_data="alert_coin_bnb")
+                ],
+                [
+                    InlineKeyboardButton("⬅ Back to Menu", callback_data="back_to_menu")
+                ]
             ]
 
             await query.edit_message_text(
-                f"⚙️ {coin.upper()} — choose alert condition:",
+                "🪙 Choose a coin for your alert:",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
 
-        else:
+        elif query.data.startswith("alert_coin_"):
+            coin = query.data.split("_")[-1]
+
+            if is_pro:
+                keyboard = [
+                    [InlineKeyboardButton("📈 Above", callback_data=f"alert_cond_{coin}_above")],
+                    [InlineKeyboardButton("📉 Below", callback_data=f"alert_cond_{coin}_below")],
+                    [InlineKeyboardButton("⬅ Back", callback_data="set_alert")]
+                ]
+
+                await query.edit_message_text(
+                    f"⚙️ {coin.upper()} — choose alert condition:",
+                    reply_markup=InlineKeyboardMarkup(keyboard)
+                )
+            else:
+                context.user_data["alert_coin"] = coin
+                context.user_data["alert_condition"] = "above"
+
+                await query.edit_message_text(
+                    f"💰 Enter the price for {coin.upper()}:\n\nExample: 70000",
+                    reply_markup=back_menu_keyboard()
+                )
+
+        elif query.data.startswith("alert_cond_"):
+            parts = query.data.split("_")
+            coin = parts[2]
+            condition = parts[3]
+
             context.user_data["alert_coin"] = coin
-            context.user_data["alert_condition"] = "above"
+            context.user_data["alert_condition"] = condition
 
             await query.edit_message_text(
-                f"💰 Enter the price for {coin.upper()}:\n\nExample: 70000",
+                f"💰 Enter the price for {coin.upper()} ({condition}):\n\nExample: 70000",
                 reply_markup=back_menu_keyboard()
             )
-        
-    elif query.data.startswith("alert_cond_"):
-        parts = query.data.split("_")
-        coin = parts[2]
-        condition = parts[3]
 
-        context.user_data["alert_coin"] = coin
-        context.user_data["alert_condition"] = condition
+        elif query.data == "market_update":
+            if not is_pro:
+                text = (
+                    "🔒 *Pro Feature*\n\n"
+                    "Live market updates are available on *Cryp Pro* only.\n\n"
+                    "Upgrade to unlock:\n"
+                    "• Real-time market updates\n"
+                    "• Faster alerts\n"
+                    "• Premium features as they roll out\n\n"
+                    "🚀 Upgrade now to get the full experience."
+                )
 
-        await query.edit_message_text(
-            f"💰 Enter the price for {coin.upper()} ({condition}):\n\nExample: 70000",
-            reply_markup=back_menu_keyboard()
-        )        
+                keyboard = [
+                    [InlineKeyboardButton("🚀 Upgrade to Pro", callback_data="upgrade")],
+                    [InlineKeyboardButton("← Back to Menu", callback_data="back_to_menu")]
+                ]
 
-    elif query.data == "market_update":
-        user_id = query.from_user.id
+                await query.edit_message_text(
+                    text=text,
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode="Markdown"
+                )
+                return
 
-        # FREE USERS → LOCKED PRO SCREEN
-        if user_id not in pro_users:
+            btc_price, btc_change = get_coin_data("BTCUSDT")
+            eth_price, eth_change = get_coin_data("ETHUSDT")
+            sol_price, sol_change = get_coin_data("SOLUSDT")
+            xrp_price, xrp_change = get_coin_data("XRPUSDT")
+            doge_price, doge_change = get_coin_data("DOGEUSDT")
+
+            def trend_emoji(change):
+                return "🟢" if change >= 0 else "🔴"
+
             text = (
-                "🔒 *Pro Feature*\n\n"
-                "Live market updates are available on *Cryp Pro* only.\n\n"
-                "Upgrade to unlock:\n"
-                "• Real-time market updates\n"
-                "• Faster alerts\n"
-                "• Premium features as they roll out\n\n"
-                "🚀 Upgrade now to get the full experience."
+                "📈 *Cryp Pro Market Update*\n\n"
+                f"{trend_emoji(btc_change)} ₿ BTC: ${btc_price:,.2f} ({btc_change:+.2f}%)\n"
+                f"{trend_emoji(eth_change)} ◆ ETH: ${eth_price:,.2f} ({eth_change:+.2f}%)\n"
+                f"{trend_emoji(sol_change)} ◎ SOL: ${sol_price:,.2f} ({sol_change:+.2f}%)\n"
+                f"{trend_emoji(xrp_change)} ✕ XRP: ${xrp_price:,.4f} ({xrp_change:+.2f}%)\n"
+                f"{trend_emoji(doge_change)} 🐶 DOGE: ${doge_price:,.4f} ({doge_change:+.2f}%)\n\n"
+                "Market is active 🚀"
             )
-
-            keyboard = [
-                [InlineKeyboardButton("🚀 Upgrade to Pro", callback_data="upgrade")],
-                [InlineKeyboardButton("← Back to Menu", callback_data="back_to_menu")]
-            ]
 
             await query.edit_message_text(
                 text=text,
-                reply_markup=InlineKeyboardMarkup(keyboard),
+                reply_markup=back_menu_keyboard(),
                 parse_mode="Markdown"
             )
-            return
 
-         # PRO USERS → REAL DATA
-        btc_price, btc_change = get_coin_data("BTCUSDT")
-        eth_price, eth_change = get_coin_data("ETHUSDT")
-        sol_price, sol_change = get_coin_data("SOLUSDT")
-        xrp_price, xrp_change = get_coin_data("XRPUSDT")
-        doge_price, doge_change = get_coin_data("DOGEUSDT")
-
-        def trend_emoji(change):
-            return "🟢" if change >= 0 else "🔴"
-
-        text = (
-            "📈 *Cryp Pro Market Update*\n\n"
-            f"{trend_emoji(btc_change)} ₿ BTC: ${btc_price:,.2f} ({btc_change:+.2f}%)\n"
-            f"{trend_emoji(eth_change)} ◆ ETH: ${eth_price:,.2f} ({eth_change:+.2f}%)\n"
-            f"{trend_emoji(sol_change)} ◎ SOL: ${sol_price:,.2f} ({sol_change:+.2f}%)\n"
-            f"{trend_emoji(xrp_change)} ✕ XRP: ${xrp_price:,.4f} ({xrp_change:+.2f}%)\n"
-            f"{trend_emoji(doge_change)} 🐶 DOGE: ${doge_price:,.4f} ({doge_change:+.2f}%)\n\n"
-            "Market is active 🚀"
-        )
-
-        await query.edit_message_text(
-            text=text,
-            reply_markup=back_menu_keyboard(),
-            parse_mode="Markdown"
-        )
-
-    elif query.data == "upgrade":
+        elif query.data == "upgrade":
             text = (
-    "💎 *Cryp Pro*\n\n"
-    "Stop missing moves. Start catching them.\n\n"
-
-    "📊 *What you unlock:*\n"
-    "• Unlimited price alerts\n"
-    "• Advanced alerts (above / below)\n"
-    "• Real-time market updates\n"
-    "• Faster notifications\n"
-    "• Premium signals (coming soon)\n\n"
-
-    "⚡ Built for traders who want an edge.\n\n"
-
-    "💰 *One-time upgrade – instant access*\n\n"
-
-    "👇 Tap below to upgrade now"
-)
+                "💎 *Cryp Pro*\n\n"
+                "Stop missing moves. Start catching them.\n\n"
+                "📊 *What you unlock:*\n"
+                "• Unlimited price alerts\n"
+                "• Advanced alerts (above / below)\n"
+                "• Real-time market updates\n"
+                "• Faster notifications\n"
+                "• Premium signals (coming soon)\n\n"
+                "⚡ Built for traders who want an edge.\n\n"
+                "💰 *One-time upgrade – instant access*\n\n"
+                "👇 Tap below to upgrade now"
+            )
             await query.edit_message_text(
-        text=text,
-        reply_markup=upgrade_keyboard(),
-        parse_mode="Markdown"
-    )
-
-    elif query.data == "pro_status":
-        text = (
-            "💎 Cryp Pro Unlocked\n\n"
-            "Your premium access is active.\n"
-            "Enjoy all pro features 🚀"
-        )
-        await query.edit_message_text(
-            text=text,
-            reply_markup=back_menu_keyboard()
-        )
-
-    elif query.data == "upgrade_pro":
-        text = (
-            "Upgrade to Cryp Pro 🚀\n\n"
-            "Cryp Pro gives you:\n"
-            "• Faster alerts\n"
-            "• More coins covered\n"
-            "• Premium watchlist updates\n"
-            "• Better trade breakdowns\n\n"
-            "Price: R99/month\n\n"
-            "Tap Pay Now to join Cryp Pro."
-        )
-        await query.edit_message_text(
-            text=text,
-            reply_markup=upgrade_keyboard()
-        )
-
-    elif query.data.startswith("approve_"):
-        user_id = int(query.data.split("_")[1])
-
-        if user_id not in pro_users:
-            pro_users.add(user_id)
-            save_pro_users()
-
-        await context.bot.send_message(
-            chat_id=user_id,
-            text=(
-                "🎉 You have been approved!\n\n"
-                "Welcome to Cryp Pro 🚀\n\n"
-                "Here is your private access link:\n"
-                f"{CRYP_PRO_LINK}"
+                text=text,
+                reply_markup=upgrade_keyboard(),
+                parse_mode="Markdown"
             )
-        )
 
-        await query.edit_message_text(
-            text="✅ User approved successfully"
-        )
+        elif query.data == "pro_status":
+            if is_pro:
+                text = (
+                    "💎 Cryp Pro Unlocked\n\n"
+                    "Your premium access is active.\n"
+                    "Enjoy all pro features 🚀"
+                )
+            else:
+                text = (
+                    "🔓 You are currently on Cryp Free.\n\n"
+                    "Upgrade to unlock premium features 🚀"
+                )
 
-    elif query.data == "i_paid":
-        user = query.from_user
-        username = f"@{user.username}" if user.username else "No username"
-        user_id = user.id
+            await query.edit_message_text(
+                text=text,
+                reply_markup=back_menu_keyboard()
+            )
 
-        admin_message = (
-            "🚨 New Payment Request\n\n"
-            f"User: {username}\n"
-            f"User ID: {user_id}"
-        )
-
-        approve_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Approve User", callback_data=f"approve_{user_id}")]
-        ])
-
-        await context.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=admin_message,
-            reply_markup=approve_button
-        )
-
-        await query.edit_message_text(
-            text=(
-                "✅ Payment request sent!\n\n"
-                "Please wait while your payment is reviewed.\n"
-                "You will be approved shortly."
-            ),
-            reply_markup=back_menu_keyboard()
-        )
-
-    elif query.data == "back_to_menu":
-        user_id = query.from_user.id
-
-        if user_id in pro_users:
+        elif query.data == "upgrade_pro":
             text = (
-                "🚀 Welcome to Cryp Pro\n\n"
-                "Get real-time crypto alerts, market updates, and premium signals.\n\n"
-                "👇 Choose an option below:"
+                "Upgrade to Cryp Pro 🚀\n\n"
+                "Cryp Pro gives you:\n"
+                "• Faster alerts\n"
+                "• More coins covered\n"
+                "• Premium watchlist updates\n"
+                "• Better trade breakdowns\n\n"
+                "Price: R99/month\n\n"
+                "Tap Pay Now to join Cryp Pro."
             )
-        else:
-            text = (
-                "👋 Welcome to Cryp Free\n\n"
-                "Get free crypto alerts, market updates, and basic coin coverage.\n\n"
-                "👇 Choose an option below:"
+            await query.edit_message_text(
+                text=text,
+                reply_markup=upgrade_keyboard()
             )
 
-        await query.edit_message_text(
-            text=text,
-            reply_markup=main_menu_keyboard(user_id)
-        )
+        elif query.data.startswith("approve_"):
+            approved_user_id = int(query.data.split("_")[1])
+
+            if approved_user_id not in pro_users:
+                pro_users.add(approved_user_id)
+                save_pro_users()
+
+            await context.bot.send_message(
+                chat_id=approved_user_id,
+                text=(
+                    "🎉 You have been approved!\n\n"
+                    "Welcome to Cryp Pro 🚀\n\n"
+                    "Here is your private access link:\n"
+                    f"{CRYP_PRO_LINK}"
+                )
+            )
+
+            await query.edit_message_text(
+                text="✅ User approved successfully"
+            )
+
+        elif query.data == "i_paid":
+            paid_user = query.from_user
+            paid_username = f"@{paid_user.username}" if paid_user.username else "No username"
+            paid_user_id = paid_user.id
+
+            admin_message = (
+                "🚨 New Payment Request\n\n"
+                f"User: {paid_username}\n"
+                f"User ID: {paid_user_id}"
+            )
+
+            approve_button = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Approve User", callback_data=f"approve_{paid_user_id}")]
+            ])
+
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=admin_message,
+                reply_markup=approve_button
+            )
+
+            await query.edit_message_text(
+                text=(
+                    "✅ Payment request sent!\n\n"
+                    "Please wait while your payment is reviewed.\n"
+                    "You will be approved shortly."
+                ),
+                reply_markup=back_menu_keyboard()
+            )
+
+        elif query.data == "back_to_menu":
+            if is_pro:
+                text = (
+                    "🚀 Welcome to Cryp Pro\n\n"
+                    "Get real-time crypto alerts, market updates, and premium signals.\n\n"
+                    "👇 Choose an option below:"
+                )
+            else:
+                text = (
+                    "👋 Welcome to Cryp Free\n\n"
+                    "Get free crypto alerts, market updates, and basic coin coverage.\n\n"
+                    "👇 Choose an option below:"
+                )
+
+            await query.edit_message_text(
+                text=text,
+                reply_markup=main_menu_keyboard(user_id)
+            )
+
+    except Exception as e:
+        print("Button handler error:", e)
+        
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global pro_users
 
