@@ -2096,14 +2096,25 @@ async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
             target = float(alert["target"])
             condition = alert.get("condition", "above")
 
-            url = f"https://api.binance.com/api/v3/ticker/price?symbol={coin}USDT"
-            response = requests.get(url, timeout=10)
+            url = "https://api.coingecko.com/api/v3/simple/price"
+            params = {
+                "ids": "bitcoin,ethereum,solana",
+                "vs_currencies": "usd"
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-
-            print("Binance response:", data)
-
-            price = float(data["price"])
+            
+            print("CoinGecko response:", data)
+            
+            price_map = {
+                "BTC": data["bitcoin"]["usd"],
+                "ETH": data["ethereum"]["usd"],
+                "SOL": data["solana"]["usd"]
+            }
+            
+            price = price_map.get(coin)
 
             print(
                 f"Checking {coin}: current price = {price}, "
