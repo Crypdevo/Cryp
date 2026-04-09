@@ -2066,27 +2066,43 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     import asyncio
 
 async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
+    print("=== CHECKING ALERTS ===")
+    print("PRICE_ALERTS:", PRICE_ALERTS)
+
     for alert in PRICE_ALERTS[:]:
         try:
+            print("Raw alert:", alert)
+
             coin = alert["coin"]
             user_id = alert["user_id"]
-            target = alert["target"]
+            target = float(alert["target"])
+            condition = alert.get("condition", "above")
 
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={coin}USDT"
-            price = float(requests.get(url).json()["price"])
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
 
-            condition = alert.get("condition", "above")
+            print("Binance response:", data)
+
+            price = float(data["price"])
+
+            print(
+                f"Checking {coin}: current price = {price}, "
+                f"target = {target}, condition = {condition}"
+            )
 
             triggered = False
 
             if condition == "above" and price >= target:
                 triggered = True
+                print("ABOVE alert triggered")
 
             elif condition == "below" and price <= target:
                 triggered = True
+                print("BELOW alert triggered")
 
             if triggered:
-
                 if alert.get("premium"):
                     alert_message = (
                         f"🚨 CRYP PRO SIGNAL 🚨\n\n"
@@ -2100,13 +2116,11 @@ async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
                 else:
                     alert_message = f"🚨 {coin} hit ${target}!\nCurrent price: ${price}"
 
-                # Send to user
                 await context.bot.send_message(
                     chat_id=user_id,
                     text=alert_message
                 )
 
-                # Send to Cryp Pro ONLY if premium
                 if alert.get("premium"):
                     await context.bot.send_message(
                         chat_id=CRYP_PRO_CHANNEL_ID,
@@ -2115,9 +2129,10 @@ async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
 
                 PRICE_ALERTS.remove(alert)
                 save_price_alerts()
+                print("Alert removed after sending")
 
-        except:
-            continue
+        except Exception as e:
+            print("check_price_alerts error:", e)
 async def show_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_alerts = []
