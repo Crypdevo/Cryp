@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from db import init_db
 from db import get_user
 from migrate_pro_users import migrate
+from db import create_or_update_user
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -1300,8 +1301,14 @@ async def send_daily_briefing(context: ContextTypes.DEFAULT_TYPE):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    print("START USER ID:", user_id)
-    print("PRO USERS LIST:", pro_users)
+    username = update.effective_user.username
+    
+    create_or_update_user(user_id, username=username)
+    
+    user = get_user(user_id)
+    is_pro = bool(user["is_pro"]) if user else False
+    
+    print(f"START DEBUG -> user_id={user_id}, username={username}, db_is_pro={is_pro}")
 
     if user_id in pro_users:
         text = (
@@ -1431,6 +1438,17 @@ async def getchatid(update, context):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    try:
+        user_id = query.from_user.id
+        username = query.from_user.username
+
+        create_or_update_user(user_id, username=username)
+
+        user = get_user(user_id)
+        is_pro = bool(user["is_pro"]) if user else False
+
+        print(f"BUTTON DEBUG -> user_id={user_id}, username={username}, db_is_pro={is_pro}")
 
     if query.data == "free_alerts":
         text = (
@@ -1986,9 +2004,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        user_id = update.message.from_user.id
+        user_id = update.effective_user.id
+        username = update.effective_user.username
+
+        create_or_update_user(user_id, username=username)
+
         user = get_user(user_id)
         is_pro = bool(user["is_pro"]) if user else False
+
+        print(f"HANDLE DEBUG -> user_id={user_id}, username={username}, db_is_pro={is_pro}")
 
         message_parts = update.message.text.strip().lower().split()
         text = update.message.text.strip().lower()
