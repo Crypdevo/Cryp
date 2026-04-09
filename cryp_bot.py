@@ -9,6 +9,7 @@ from db import init_db
 from db import get_user
 from migrate_pro_users import migrate
 from db import create_or_update_user
+from db import set_user_pro
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -1340,14 +1341,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 async def remove_me(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global pro_users
+
     user_id = update.effective_user.id
 
     if user_id in pro_users:
         pro_users.remove(user_id)
         save_pro_users()
-        await update.message.reply_text("❌ Your Pro access has been removed.")
-    else:
-        await update.message.reply_text("You do not have an active Pro subscription.")
+
+    set_user_pro(
+        telegram_user_id=user_id,
+        is_pro=0,
+        subscription_status="removed_for_testing"
+    )
+
+    await update.message.reply_text("❌ Your Pro access has been removed. You are now on Cryp Free.")
         
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.to_dict())
