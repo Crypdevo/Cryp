@@ -2010,6 +2010,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         if text == "insight":
+            if not is_pro:
+                await update.message.reply_text("🔒 Premium insight is a Cryp Pro feature.")
+                return
+
             insight = get_premium_insight()
             await update.message.reply_text(insight, parse_mode="Markdown")
             return
@@ -2055,7 +2059,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "user_id": user_id,
                     "coin": coin.upper(),
                     "condition": condition,
-                    "target": target_price
+                    "target": target_price,
+                    "premium": is_pro
                 })
 
                 save_price_alerts()
@@ -2074,8 +2079,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(message_parts) == 2 and message_parts[0] == "add":
             coin = message_parts[1].lower()
 
-            supported_coins = ["btc", "eth", "sol", "xrp", "doge", "ada", "bnb"]
-
             if coin not in supported_coins:
                 await update.message.reply_text("❌ Coin not supported yet.")
                 return
@@ -2091,7 +2094,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(f"🗑 {coin.upper()} removed from your watchlist.")
             else:
                 await update.message.reply_text(f"❌ {coin.upper()} is not in your watchlist.")
-
             return
 
         if len(message_parts) == 2:
@@ -2165,6 +2167,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ Invalid format. Use like this:\nBTC 70000"
         )
+    except Exception as e:
+        print("HANDLE MESSAGE ERROR:", e)
+        await update.message.reply_text("⚠️ Something went wrong. Please try again.")
 
 async def check_price_alerts(context: ContextTypes.DEFAULT_TYPE):
     print("=== CHECKING ALERTS ===")
