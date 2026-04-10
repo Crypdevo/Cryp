@@ -1877,19 +1877,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
        elif query.data.startswith("approve_"):
             approved_user_id = int(query.data.split("_")[1])
-        
+
             if approved_user_id not in pro_users:
                 pro_users.add(approved_user_id)
                 save_pro_users()
-        
+
             create_or_update_user(approved_user_id)
-        
+
             set_user_pro(
                 telegram_user_id=approved_user_id,
                 is_pro=1,
                 subscription_status="manually_approved"
             )
-        
+
             await context.bot.send_message(
                 chat_id=approved_user_id,
                 text=(
@@ -1899,7 +1899,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"{CRYP_PRO_LINK}"
                 )
             )
-        
+
             await query.edit_message_text(
                 text="✅ User approved successfully"
             )
